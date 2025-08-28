@@ -1,0 +1,3 @@
+C:/Users/razie/source/2DShooter/Shooter/out/build/x64-debug/CMakeFiles/Shooter.dir
+C:/Users/razie/source/2DShooter/Shooter/out/build/x64-debug/CMakeFiles/edit_cache.dir
+C:/Users/razie/source/2DShooter/Shooter/out/build/x64-debug/CMakeFiles/rebuild_cache.dir
