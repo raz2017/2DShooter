@@ -79,6 +79,8 @@ void cleanup(SDLState &win);
 void drawObject(const SDLState& state, GameState& gameState, GameObject& obj, float deltaTime);
 void update(const SDLState& state, GameState& gameStaet, Resources& resources, GameObject& obj, float deltaTime);
 void createTiles(const SDLState& state, GameState& gameState, const Resources& resources);
+void checkCollissions(const SDLState& state, GameState& gameState, Resources& resources,
+	GameObject& a, GameObject& b, float deltaTime);
 
 int main(int argc, char *argv[])
 {
@@ -214,6 +216,12 @@ void drawObject(const SDLState& state, GameState& gameState, GameObject& obj, fl
 }
 
 void update(const SDLState& state, GameState& gameStaet, Resources& resources, GameObject& obj, float deltaTime) {
+	
+	if (obj.dynamic) {
+		//apply some gravity
+		obj.velocity += glm::vec2(0, 500) * deltaTime;
+	}
+
 	if (obj.type == ObjectType::player) {
 		float currentDirection = 0;
 
@@ -266,9 +274,74 @@ void update(const SDLState& state, GameState& gameStaet, Resources& resources, G
 		if (std::abs(obj.velocity.x) > obj.maxSpeedX) {
 			obj.velocity.x = currentDirection * obj.maxSpeedX;
 		}
+	}
+	//add velocity to position
+	obj.position += obj.velocity * deltaTime;
 
-		//add velocity to position
-		obj.position += obj.velocity * deltaTime;
+	//handle collision detection
+
+	for (auto& layer : gameStaet.layers) {
+		for (GameObject& objB : layer) {
+			if (&obj != &objB) {
+				checkCollissions(state, gameStaet, resources, obj, objB, deltaTime);
+			}
+		}
+	}
+}
+
+void collisionResponse(const SDLState& state, GameState& gameState, Resources &resources,
+	const SDL_FRect &rectA, const SDL_FRect &rectB, const SDL_FRect &rectC, GameObject& objA, GameObject& objB, float deltaTime) {
+
+	if (objA.type == ObjectType::player) {
+
+		switch (objB.type) {
+			case ObjectType::level: {
+				if (rectC.w < rectC.h) {
+					//horizonal collision
+					if (objA.velocity.x > 0) {
+						objA.position.x -= rectC.w;
+					}
+					else if (objA.velocity.x < 0) { //going left
+						objA.position.x += rectC.w;
+					}
+					objA.velocity.x = 0;
+				}
+				else {
+					//vertical collision
+					if (objA.velocity.y > 0) {
+						objA.position.y -= rectC.h;
+					}
+					else if (objA.velocity.y < 0) {
+						objA.position.y += rectC.h;
+					}
+					objA.velocity.y = 0;
+				}
+				break;
+			}
+		}
+	}
+}
+
+void checkCollissions(const SDLState& state, GameState& gameState, Resources &resources, 
+	GameObject &a, GameObject &b, float deltaTime) {
+
+	SDL_FRect rectA{
+		.x = a.position.x,
+		.y = a.position.y,
+		.w = TILE_SIZE,
+		.h = TILE_SIZE
+	};
+
+	SDL_FRect rectB{
+	.x = b.position.x,
+	.y = b.position.y,
+	.w = TILE_SIZE,
+	.h = TILE_SIZE
+	};
+	SDL_FRect rectC{ 0 };
+
+	if (SDL_GetRectIntersectionFloat(&rectA, &rectB, &rectC)) {
+		collisionResponse(state, gameState, resources, rectA, rectB, rectC, a, b, deltaTime);
 	}
 }
 
@@ -316,6 +389,7 @@ void createTiles(const SDLState& state, GameState& gameState, const Resources& r
 				player.currentAnimation = resources.ANIM_PLAYER_IDLE;
 				player.acceleration = glm::vec2(300, 0);
 				player.maxSpeedX = 100;
+				player.dynamic = true;
 				gameState.layers[LAYER_IDX_CHARACTERS].push_back(player);
 				break;
 			}
