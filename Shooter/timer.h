@@ -5,7 +5,8 @@ class Timer {
 	bool timeout;
 
 public:
-	Timer(float length) : length(length), time(0) {
+	Timer(float length) : length(length), time(0), timeout(false)
+	{
 
 	}
 
@@ -20,5 +21,5 @@ public:
 	bool isTimeout() const { return timeout; }
 	float getTime() const { return time; }
 	float getLength() const { return length; }
-	void reset() { time = 0; }
+	void reset() { time = 0, timeout = false; }
 };
